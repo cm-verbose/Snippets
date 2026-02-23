@@ -1,4 +1,4 @@
-import { User } from "../types";
+import { User } from "../last.fm";
 import LastFMRequest from "./LastFMRequest";
 
 /** Handles logic tied with authentication */

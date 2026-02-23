@@ -1,5 +1,6 @@
 import UserHandler from "./UserHandler";
-import { FormattedSong, NoFormattedSong, RecentTracks, Song, Track, User } from "../types";
+import { RecentTracks, Song, Track, User } from "../last.fm";
+import { FormattedSong, NoFormattedSong } from "../types";
 import LastFMRequest from "./LastFMRequest";
 import fs from "fs";
 
@@ -142,7 +143,7 @@ export default class DataHandler {
   async joinFiles(combinedName: string) {
     let files = fs.readdirSync("./data/");
 
-    if (files.length === 1) {
+    if (files.length > 1) {
       files = files.sort((a, b) => {
         const nA = parseInt(a.match(/\d+/g)![0]);
         const nB = parseInt(b.match(/\d+/g)![0]);
