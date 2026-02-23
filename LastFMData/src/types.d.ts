@@ -99,13 +99,13 @@ interface Song {
 
 /// Formatted Song (custom)
 interface FormattedSong {
-  track: Track, 
-  song: Song,
+  track: Track;
+  song: Song;
 }
 
 interface NoFormattedSong {
-  track: Track, 
-  song: { err: "no data found" }
+  track: Track;
+  song: { err: "no data found" };
 }
 
 export { FormattedSong, NoFormattedSong, RecentTracks, Song, Track, User };

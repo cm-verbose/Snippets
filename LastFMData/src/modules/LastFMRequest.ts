@@ -67,7 +67,7 @@ export default class LastFMRequest {
     return this;
   }
 
-  public setTrack(track: string): Omit<LastFMRequest, "track">{
+  public setTrack(track: string): Omit<LastFMRequest, "track"> {
     this.reqStr += `&track=${track}`;
     return this;
   }
