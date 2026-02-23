@@ -7,7 +7,8 @@ import fs from "fs";
 export default class DataHandler {
   private API_KEY!: string;
   private USERNAME!: string;
-  private songMap: Map<string, number> = new Map();
+  private songMBIDMap: Map<string, number> = new Map();
+  private songTrackNameArtistMap: Map<string, number> = new Map();
   private songs: (FormattedSong | NoFormattedSong)[] = [];
 
   constructor() {
@@ -62,7 +63,8 @@ export default class DataHandler {
       await this.getSongData(pageJSON.recenttracks.track);
       fs.writeFileSync(`data/data_page_${page}.json`, JSON.stringify(this.songs));
       this.songs = [];
-      this.songMap.clear();
+      this.songMBIDMap.clear();
+      this.songTrackNameArtistMap.clear();
     }
     await this.joinFiles("./data/combined.json");
     for (let page = 1; page < LAST_PAGE; page++) {
@@ -75,8 +77,8 @@ export default class DataHandler {
     for (const track of tracks) {
       const trackMBID = track.mbid;
 
-      if (this.songMap.has(trackMBID)) {
-        const index = this.songMap.get(trackMBID);
+      if (this.songMBIDMap.has(trackMBID)) {
+        const index = this.songMBIDMap.get(trackMBID);
 
         if (index === undefined) continue;
         const song = this.songs[index];
@@ -85,7 +87,7 @@ export default class DataHandler {
         this.songs.push(song);
       } else if (trackMBID !== "") {
         const songLength = this.songs.length;
-        this.songMap.set(trackMBID, songLength === 0 ? 0 : songLength - 1);
+        this.songMBIDMap.set(trackMBID, songLength === 0 ? 0 : songLength - 1);
 
         const songURL = new LastFMRequest()
           .call("track.getInfo")
@@ -102,22 +104,55 @@ export default class DataHandler {
         };
         this.songs.push(formated);
       } else {
-        const formated: NoFormattedSong = {
-          track,
-          song: { err: "no data found" },
-        };
-        this.songs.push(formated);
+        const songLength = this.songs.length;
+        const trackName = track.name;
+        const artistName = track.artist["#text"];
+
+        const infoPair = `${trackName}|${artistName}`;
+        if (this.songTrackNameArtistMap.has(infoPair)) {
+          const index = this.songTrackNameArtistMap.get(infoPair);
+          if (!index) continue;
+          const song = this.songs[index];
+          if (!song) continue;
+
+          this.songs.push(song);
+        } else {
+          this.songTrackNameArtistMap.set(infoPair, songLength === 0 ? 0 : songLength - 1);
+          const songURL = new LastFMRequest()
+            .call("track.getInfo")
+            .setAPIKey(this.API_KEY)
+            .setTrack(encodeURIComponent(trackName))
+            .setArtist(encodeURIComponent(artistName))
+            .setFormat("json");
+
+          const songResponse = await fetch(songURL.toString());
+          const songData: Song = await songResponse.json();
+
+          const formated: FormattedSong = {
+            track,
+            song: songData,
+          };
+          this.songs.push(formated);
+        }
       }
     }
   }
 
   /** Join generated files */
   async joinFiles(combinedName: string) {
-    const files = fs.readdirSync("data/").sort((a, b) => {
-      const nA = parseInt(a.match(/\d+/g)![0]);
-      const nB = parseInt(b.match(/\d+/g)![0]);
-      return nA - nB;
-    });
+    let files = fs.readdirSync("./data/");
+
+    if (files.length === 1) {
+      files = files.sort((a, b) => {
+        const nA = parseInt(a.match(/\d+/g)![0]);
+        const nB = parseInt(b.match(/\d+/g)![0]);
+        return nA - nB;
+      });
+    }
+
+    if (fs.existsSync(combinedName)) {
+      fs.rmSync(combinedName);
+    }
 
     const writeStream = fs.createWriteStream(combinedName);
     writeStream.write("[");

@@ -62,6 +62,16 @@ export default class LastFMRequest {
     return this;
   }
 
+  public setArtist(artist: string): Omit<LastFMRequest, "artist"> {
+    this.reqStr += `&artist=${artist}`;
+    return this;
+  }
+
+  public setTrack(track: string): Omit<LastFMRequest, "track">{
+    this.reqStr += `&track=${track}`;
+    return this;
+  }
+
   public toString() {
     return this.reqStr;
   }
